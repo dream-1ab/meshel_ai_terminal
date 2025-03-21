@@ -7,25 +7,6 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in library 'flutter_quickjs_bridge'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=flutter_quickjs_bridge"
-                ],
-                "filter": {
-                    "name": "flutter_quickjs_bridge",
-                    "kind": "lib"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
             "name": "Debug executable 'flutter_quickjs_bridge'",
             "cargo": {
                 "args": [
