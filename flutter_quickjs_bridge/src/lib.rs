@@ -1,6 +1,6 @@
-use std::{mem::transmute, rc::Rc, slice::from_raw_parts};
+use std::{ffi::{CStr, CString}, mem::transmute, rc::Rc, slice::from_raw_parts, time::Duration};
 
-use quickjs_rusty::{q::{JSValue, JS_Ext_GetPtr, JS_Ext_NewPointer, JS_GetOpaque, JS_NewCFunctionData, JS_SetOpaque}, serde::from_js, utils::{create_empty_object, create_function, create_undefined}, Context, JSContext, JsTag, OwnedJsValue};
+use quickjs_rusty::{q::{JSModuleDef, JSValue, JS_AddModuleExport, JS_Ext_GetPtr, JS_Ext_NewCFunction, JS_Ext_NewPointer, JS_Ext_NewSpecialValue, JS_GetOpaque, JS_NewCFunction2, JS_NewCFunctionData, JS_NewCModule, JS_SetModuleExport, JS_SetOpaque}, serde::from_js, utils::{create_empty_object, create_function, create_undefined}, Context, JSContext, JsTag, OwnedJsValue};
 use serde_json::Value;
 
 /**
@@ -86,6 +86,43 @@ impl<CONSOLE> JsEngine<CONSOLE> where CONSOLE: JsConsole {
     }
 
     fn initialize_modules(&self) {
-        
+        let context = unsafe {self.context.context_raw()};
+        unsafe {//threading related
+            let module_name = CString::new("core/threading").unwrap();
+            let module_def = JS_NewCModule(context, module_name.as_ptr(), Some({
+                unsafe extern "C" fn module_init(context: *mut JSContext, m: *mut JSModuleDef) -> std::os::raw::c_int {
+                    let function_name = CString::new("sleep").unwrap();
+                    // println!("m is null = {}", m == std::ptr::null_mut());
+                    unsafe {
+                        let result = JS_SetModuleExport(context, m, function_name.as_ptr(), JS_Ext_NewCFunction(context, Some({
+                            unsafe extern "C" fn sleep(context: *mut JSContext, this_val: JSValue, argc: ::std::os::raw::c_int, argv: *mut JSValue) -> JSValue {
+                                // println!("Hit to sleep.");
+                                if argc != 1 {
+                                    return unsafe {JS_Ext_NewSpecialValue(quickjs_rusty::q::JS_TAG_EXCEPTION, 1)};
+                                }
+                                let owned_value = OwnedJsValue::own(context, &*argv.add(0));
+                                if !owned_value.is_int() {
+                                    return unsafe {JS_Ext_NewSpecialValue(quickjs_rusty::q::JS_TAG_EXCEPTION, 2)};
+                                }
+                                std::thread::sleep(Duration::from_millis(owned_value.to_int().unwrap() as u64));
+                                return create_undefined();
+                            }
+                            sleep
+                        }), function_name.as_ptr(), 1));
+                        if result != 0 {
+                            println!("Cannot export function sleep with error code: {}", result);
+                        }
+                    };
+                    return 0;
+                }
+                module_init
+            }));
+            if module_def == std::ptr::null_mut() {
+                panic!("Rust Js module creation failed")
+            }
+            if JS_AddModuleExport(context, module_def, CString::new("sleep").unwrap().as_ptr()) != 0 {
+                panic!("JS_AddModuleExport failed")
+            }
+        }
     }
 }
