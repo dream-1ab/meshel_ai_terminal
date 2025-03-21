@@ -1,33 +1,22 @@
+/**
+ * @author مۇختەرجان مەخمۇت
+ * @email ug-project@outlook.com
+ * @create date 2025-03-22 03:53:26
+ * @modify date 2025-03-22 03:53:26
+ * @desc [description]
+ */
+
+import {log, info, warn, error, print} from "core/console"
 import {sleep} from "core/threading"
-// import {sendMessage} from "core/messaging"
+import {setDartCallHandler, callDart} from "dart/interop"
 
-let index = 0
+let counter = 0
+
+setDartCallHandler((age, name) => {
+    print("From Rust: ", name, age)
+})
+
 while (true) {
-    // let bytes = new Uint8Array(1024)
-    console.log("hello world!", index)
-    index+= 1
-    sleep(16)
-}
-
-let count = 0
-export function uiMain(context) {
-    return Column({
-        children: [
-            Text(`Count: ${count++}`),
-            ElevatedButton({
-                child: Text("hello world"),
-                onTap: () => {
-                    sendMessage({
-                        action: "increaseCount",
-                        value: 2
-                    })
-                }
-            }),
-            Row({
-                children: [
-
-                ]
-            })
-        ]
-    })
+    print({name: "hello world", count: counter++})
+    sleep(32)
 }
