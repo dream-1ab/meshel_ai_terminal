@@ -1,10 +1,20 @@
 use std::io::Read;
 
-use flutter_quickjs_bridge::{JsConsole, JsEngine};
-use quickjs_rusty::ExecutionError;
+use flutter_quickjs_bridge::{JsConsole, JsEngine, RustJsModule};
+use quickjs_rusty::{serde::from_js, utils::create_undefined, ExecutionError, OwnedJsValue};
+use serde_json::Value;
 
 fn main() {
-    let engine = JsEngine::new(RustTerminalConsole);
+    let mut engine = JsEngine::new(RustTerminalConsole);
+    engine.register_native_module({
+        let mut module = RustJsModule::new("core/console".into());
+        module.register_function("print", 1, |context, args: Vec<OwnedJsValue>, tag| {
+            let args: Vec<Value> = args.iter().map(|item| from_js(context, &item).unwrap()).collect();
+
+            OwnedJsValue::new(context, create_undefined())
+        });
+        module
+    });
     {
         let file = std::fs::File::open("./assets/test.mjs").unwrap();
         let source_code = std::io::read_to_string(file).unwrap();
@@ -42,62 +52,3 @@ impl JsConsole for RustTerminalConsole {
         println!("error: {:?}", value);
     }
 }
-
-
-// type FINAL_FN = fn(ptr: *mut ());
-
-// fn make_fn() -> FINAL_FN {
-//     fn final_fn(ptr: *mut (), ) {
-//         let closure = ptr as *mut Box<dyn Fn()>;
-
-//         unsafe {
-//             (*closure)();
-//         }
-//     }
-
-//     final_fn
-// }
-
-// fn consume_closure(){
-//     let handle = make_fn();
-//     let closure: *mut Box<dyn Fn()> = Box::into_raw(Box::new(Box::new(|| {
-//         println!("Inside of closure");
-//     })));
-//     handle(closure as *mut ())
-// }
-
-
-// fn main() {
-//     consume_closure();
-//     // main2();
-// }
-
-
-// type Callback = extern "C" fn(*mut ());
-
-// // Implemented somewhere in a library
-// fn some_c_function(callback: Callback, argument: *mut ()) {
-//     callback(argument);
-// }
-
-// extern fn my_callback(argument: *mut ()) {
-//     unsafe {
-//         let closure = argument as *mut Box<dyn Fn()>;
-        
-//         // Or, to destroy the box:
-//         // let closure = Box::from_raw(argument as *mut Box<dyn Fn()>);
-        
-//         (*closure)();
-//     }
-// }
-
-// fn main2() {
-//     // let closure: Box<dyn Fn()> = Box::new(|| println!("hello"));
-//     // let wrapped: Box<Box<dyn Fn()>> = Box::new(closure);
-//     let wrapped: Box<Box<dyn Fn()>> = Box::new(Box::new(|| println!("Hello")));
-//     let closure_raw = Box::into_raw(wrapped);
-
-//     unsafe {
-//         some_c_function(my_callback, closure_raw as *mut ());
-//     }
-// }
