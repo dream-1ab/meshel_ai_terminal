@@ -7,6 +7,8 @@
 */
 
 
-mod engine_wrapper;
+pub mod engine_wrapper;
 mod raw_string;
 pub mod ref_from_pointer;
+pub mod entities;
+pub mod javascript_engine_wrapper_generated;

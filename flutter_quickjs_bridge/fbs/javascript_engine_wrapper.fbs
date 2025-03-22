@@ -1,0 +1,13 @@
+namespace javascript_engine_dart_wrapper;
+
+table DartFunction {
+    name: string;
+    function_id: uint64;
+}
+
+table DartModule {
+    name: string;
+    functions: [DartFunction];
+}
+
+root_type DartModule;

@@ -8,6 +8,7 @@
 
 use std::os::raw::*;
 
+#[repr(C)]
 pub struct RawString {
     pub ptr: *const c_char,
     pub length: u32,
@@ -22,3 +23,11 @@ impl RawString {
     }
 }
 
+pub struct DartFunction {
+    function_name: RawString,
+    pointer: u64
+}
+
+impl DartFunction {
+    
+}

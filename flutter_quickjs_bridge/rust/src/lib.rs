@@ -6,7 +6,7 @@ use serde_json::Value;
 
 
 pub mod javascript_engine;
-mod c_lib;
+pub mod c_lib;
 
 /**
  * @author مۇختەرجان مەخمۇت
@@ -16,8 +16,11 @@ mod c_lib;
  * @desc [description]
 */
 
+// Int32 Function(Uint32 action, Pointer<Uint8> bytes_pointer, Uint32 length, Uint32 id, Uint32 tag)
+pub type DartCallbackFunction = extern "C" fn (i32, *mut u8, u32, u64, i32) -> i32;
 pub struct JavaScriptEngineDartWrapper {
-    pub engine: JsEngine
+    pub engine: JsEngine,
+    pub dart_callback_function: Option<DartCallbackFunction>,
 }
 
 impl JavaScriptEngineDartWrapper {
@@ -25,7 +28,7 @@ impl JavaScriptEngineDartWrapper {
         let mut engine = JsEngine::new();
         JavaScriptEngineDartWrapper::init_dart_related_native_modules(&mut engine);
         JavaScriptEngineDartWrapper::init_bootstrap(&engine);
-        Self { engine: engine }
+        Self { engine: engine, dart_callback_function: None }
     }
 
 
