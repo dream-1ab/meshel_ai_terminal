@@ -8,12 +8,12 @@
 use std::{fs::File, io::Read, time::Duration};
 
 
-use flutter_quickjs_bridge::{c_lib::engine_wrapper::{javascript_engine_free, javascript_engine_new, javascript_engine_register_dart_function}, javascript_engine::{self, JsEngine, RustJsModule}, JavaScriptEngineDartWrapper};
+use flutter_quickjs_bridge::{c_api::engine_wrapper::{javascript_engine_free, javascript_engine_new, javascript_engine_register_dart_function}, javascript_engine::{self, JsEngine, RustJsModule}, JavaScriptEngineDartWrapper};
 use quickjs_rusty::{q::{JS_Ext_NewSpecialValue, JS_TAG_EXCEPTION}, serde::from_js, utils::create_undefined, ExecutionError, OwnedJsValue, ToOwnedJsValue};
 use serde_json::Value;
 
 fn main() {
-    for i in 0..100000 {
+    for i in 0..1 {
         println!("{}", i);
         let engine_ptr = javascript_engine_new();
         let buffer = {

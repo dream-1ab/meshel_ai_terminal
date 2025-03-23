@@ -36,13 +36,13 @@ impl JsEngine {
                 for function in &rust_js_module.exported_functions {
                     let name = CString::new(function.function_name.as_str()).unwrap();
                     let mut closure_value = unsafe {
-                        JS_Ext_NewPointer(JS_TAG_FUNCTION_BYTECODE, function.closure.as_ref() as *const dyn Fn(*mut JSContext, OwnedJsValue, Vec<OwnedJsValue>, i32) -> OwnedJsValue as *mut std::os::raw::c_void)
+                        JS_Ext_NewPointer(JS_TAG_NULL, function.closure.as_ref() as *const dyn Fn(*mut JSContext, OwnedJsValue, Vec<OwnedJsValue>, i32) -> OwnedJsValue as *mut std::os::raw::c_void)
                     };
                     result = unsafe {JS_SetModuleExport(ctx, m, name.as_ptr(), JS_NewCFunctionData(ctx, function.js_c_function.clone(), function.rust_function.argument_count() as i32, function.tag, 1, &mut closure_value))};
                     if result != 0 {
                         eprintln!("JS_SetModuleExport returns {} on module function {}", result, function.function_name)
                     }
-                    unsafe {JS_FreeValue(ctx, closure_value)};
+                    // unsafe {JS_FreeValue(ctx, closure_value)};
                 }
                 unsafe {
                     JS_SetRuntimeOpaque(JS_GetRuntime(ctx), std::ptr::null_mut());

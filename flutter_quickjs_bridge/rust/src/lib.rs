@@ -6,7 +6,7 @@ use serde_json::Value;
 
 
 pub mod javascript_engine;
-pub mod c_lib;
+pub mod c_api;
 
 /**
  * @author مۇختەرجان مەخمۇت

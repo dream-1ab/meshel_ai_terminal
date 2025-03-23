@@ -74,7 +74,7 @@ class JavaScriptEngine {
     const errorCode = -2;
     _javascriptCallHandlerPointer = Pointer.fromFunction<Int32 Function(Int32 action, Pointer<Uint8> bytes_pointer, Uint32 length, Uint64 id, Int32 tag)>(_javaScriptCallHandler, errorCode).address;
 
-    library ??= DynamicLibrary.open("/media/dream-lab/Development/Project/meshel_ai_terminal/flutter_quickjs_bridge/rust/target/debug/libflutter_quickjs_bridge.so");
+    library ??= DynamicLibrary.open("../rust/target/release/libflutter_quickjs_bridge.so");
     _javascript_engine_new = library!.lookupFunction<JavaScriptEngineNewRust, JavaScriptEngineNewDart>("javascript_engine_new");
     _javascript_engine_free = library!.lookupFunction<JavaScriptEngineFreeRust, JavaScriptEngineFreeDart>("javascript_engine_free");
     _javascript_engine_eval = library!.lookupFunction<JavaScriptEngineEvalRust, JavaScriptEngineEvalDart>("javascript_engine_eval");
@@ -105,7 +105,7 @@ class JavaScriptEngine {
         functionId: _registerJavaScriptCallHandler(function.$2)
       )).toList()
     ).toBytes();
-    File("dart_module.bin").writeAsBytesSync(moduleBytes, flush: true);
+    // File("dart_module.bin").writeAsBytesSync(moduleBytes, flush: true);
     {
       final pointer = malloc.allocate<Uint8>(moduleBytes.length);
       final heapBuffer = pointer.asTypedList(moduleBytes.length);
