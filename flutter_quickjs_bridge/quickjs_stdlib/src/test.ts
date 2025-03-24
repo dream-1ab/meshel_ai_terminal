@@ -9,7 +9,7 @@
 import {sleep} from "core/threading"
 
 let counter = 0
-while (true) {
+for (let a = 0; a < 100; a++) {
     console.log({name: "hello world", count: counter++})
-    sleep(32)
+    sleep(16)
 }

@@ -8,35 +8,19 @@
 use std::{fs::File, io::Read, time::Duration};
 
 
-use flutter_quickjs_bridge::{c_api::engine_wrapper::{javascript_engine_free, javascript_engine_new, javascript_engine_register_dart_function}, javascript_engine::{self, JsEngine, RustJsModule}, JavaScriptEngineDartWrapper};
+use flutter_quickjs_bridge::{c_api::engine_wrapper::{javascript_engine_free, javascript_engine_new, javascript_engine_register_dart_function}, javascript_engine::{self, JsEngine, RustJsModule}, print_execution_error, JavaScriptEngineDartWrapper};
 use quickjs_rusty::{q::{JS_Ext_NewSpecialValue, JS_TAG_EXCEPTION}, serde::from_js, utils::create_undefined, ExecutionError, OwnedJsValue, ToOwnedJsValue};
 use serde_json::Value;
 
 fn main() {
-    for i in 0..1 {
-        println!("{}", i);
-        let engine_ptr = javascript_engine_new();
-        let buffer = {
-            let mut buffer = vec![];
-            File::open("/media/dream-lab/Development/Project/meshel_ai_terminal/flutter_quickjs_bridge/dart/dart_module.bin").unwrap().read_to_end(&mut buffer).unwrap();
-            buffer
-        };
-        javascript_engine_register_dart_function(engine_ptr, buffer.as_ptr() as *const i8, buffer.len() as u64);
-        javascript_engine_free(engine_ptr);
-    }
-    println!("End.");
-    return;
-    let mut engine = JavaScriptEngineDartWrapper::new();
+    let mut engine = JavaScriptEngineDartWrapper::new(0);
     {
         
         let result = engine.engine.context.eval_module(&read_file("../quickjs_stdlib/bin/test.js"), true);
         match result {
             Ok(result) => {},
             Err(error) => {
-                println!("{:?}", error);
-                if let ExecutionError::Exception(error) = &error {
-                    println!("{}", error.js_to_string().unwrap());
-                }
+                print_execution_error(error);
             },
         }
     }

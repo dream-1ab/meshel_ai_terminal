@@ -12,3 +12,4 @@ mod raw_string;
 pub mod ref_from_pointer;
 pub mod entities;
 pub mod javascript_engine_wrapper_generated;
+pub mod javascript_function_wrapper;

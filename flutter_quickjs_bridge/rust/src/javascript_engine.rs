@@ -8,7 +8,7 @@
 
 use std::{any::TypeId, ffi::{CStr, CString}, mem::transmute, ptr::null_mut, rc::Rc, slice::from_raw_parts, time::Duration};
 
-use quickjs_rusty::{q::*, serde::from_js, utils::{create_empty_object, create_function, create_undefined}, Context, JSContext, JsTag, OwnedJsValue};
+use quickjs_rusty::{q::*, serde::from_js, utils::{create_empty_object, create_function, create_undefined}, Context, JSContext, JsTag, OwnedJsValue, ToOwnedJsValue};
 use serde_json::Value;
 
 
@@ -119,13 +119,13 @@ pub trait RustJsFunction {
     fn call(&self, context: *mut JSContext, this_val: OwnedJsValue, args: Vec<OwnedJsValue>, tag: i32) -> OwnedJsValue;
 }
 
-impl<T> RustJsFunction for T where T: Fn(*mut JSContext, Vec<OwnedJsValue>, i32) -> OwnedJsValue {
+impl<T, R> RustJsFunction for T where T: Fn(*mut JSContext, Vec<OwnedJsValue>, i32) -> R, R: ToOwnedJsValue {
     fn argument_count(&self) -> u32 {
         7
     }
 
     fn call(&self, context: *mut JSContext, this_val: OwnedJsValue, args: Vec<OwnedJsValue>, tag: i32) -> OwnedJsValue {
-        self(context, args, tag)
+        self(context, args, tag).to_owned(context)
     }
 }
 

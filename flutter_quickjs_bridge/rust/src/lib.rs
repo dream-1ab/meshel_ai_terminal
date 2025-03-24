@@ -1,7 +1,8 @@
-use std::{ffi::c_char, time::Duration};
+use std::{ffi::{c_char, CString}, time::Duration};
 
+use c_api::javascript_function_wrapper::JavaScriptFunction;
 use javascript_engine::{JsEngine, RustJsModule};
-use quickjs_rusty::{q::{JS_Ext_NewSpecialValue, JS_TAG_EXCEPTION}, serde::from_js, utils::create_undefined, OwnedJsValue, ToOwnedJsValue};
+use quickjs_rusty::{q::{JS_Ext_NewSpecialValue, JS_ThrowTypeError, JS_TAG_EXCEPTION}, serde::from_js, utils::{create_int, create_undefined}, ExecutionError, OwnedJsValue, ToOwnedJsValue};
 use serde_json::Value;
 
 
@@ -16,19 +17,23 @@ pub mod c_api;
  * @desc [description]
 */
 
-// Int32 Function(Uint32 action, Pointer<Uint8> bytes_pointer, Uint32 length, Uint32 id, Uint32 tag)
-pub type DartCallbackFunction = extern "C" fn (i32, *mut u8, u32, u64, i32) -> i32;
+pub type DartFuncionCallCallback = extern "C" fn (u64 /*engine_id*/, i32 /*action*/, *mut u8/*bytes_pointer*/, u32/*bytes_length*/, u64/*callback_id*/, i32/*tag*/) -> i32;
+pub type DartJavascriptRegisterFunctionCallback = extern "C" fn (u64/*engine_id*/, *const c_char/*function_name_ptr*/, u32/*function_name_length*/, *const JavaScriptFunction) -> i32;
+
 pub struct JavaScriptEngineDartWrapper {
     pub engine: JsEngine,
-    pub dart_callback_function: Option<DartCallbackFunction>,
+    pub dart_function_call_callback_function: Option<DartFuncionCallCallback>,
+    pub dart_javascript_function_register_callback: Option<DartJavascriptRegisterFunctionCallback>,
+    pub engine_id: u64,
 }
 
 impl JavaScriptEngineDartWrapper {
-    pub fn new() -> Self {
+    pub fn new(engine_id: u64) -> Self {
         let mut engine = JsEngine::new();
         JavaScriptEngineDartWrapper::init_dart_related_native_modules(&mut engine);
-        JavaScriptEngineDartWrapper::init_bootstrap(&engine);
-        Self { engine: engine, dart_callback_function: None }
+        JavaScriptEngineDartWrapper::init_bootstrap(&mut engine);
+        let mut me = Self { engine: engine, dart_function_call_callback_function: None, dart_javascript_function_register_callback: None, engine_id };
+        me
     }
 
 
@@ -92,42 +97,24 @@ impl JavaScriptEngineDartWrapper {
             });
             module
         }).expect("Cannot register threading module");
-
-        engine.register_native_module({
-            let mut module = RustJsModule::new("dart/interop".into());
-            // module.register_function("onMemoryBufferTransferFromDart", 0, |context, args: Vec<OwnedJsValue>, tag| {
-            //     let first = args[0].clone();
-            //     let js_function = first.try_into_function().expect("Cannot convert first parameter to function");
-            //     js_function.call(vec![10.to_owned(context), ToOwnedJsValue::to_owned("Hello world", context)]).unwrap();
-            //     OwnedJsValue::new(context, create_undefined())
-            // });
-            // module.register_function("transferMemoryBufferToDart", 0, |context, args: Vec<OwnedJsValue>, tag| {
-            //     let first = args[0].clone();
-            //     let js_function = first.try_into_function().expect("Cannot convert first parameter to function");
-            //     js_function.call(vec![10.to_owned(context), ToOwnedJsValue::to_owned("Hello world", context)]).unwrap();
-            //     OwnedJsValue::new(context, create_undefined())
-            // });
-            module.register_function("onDartFunctionTransferFromDart", 0, |context, args: Vec<OwnedJsValue>, tag| {
-                let first = args[0].clone();
-                let js_function = first.try_into_function().expect("Cannot convert first parameter to function");
-                js_function.call(vec![10.to_owned(context), ToOwnedJsValue::to_owned("Hello world", context)]).unwrap();
-                OwnedJsValue::new(context, create_undefined())
-            });
-            module.register_function("transferJavascriptFunctionToDart", 0, |context, args: Vec<OwnedJsValue>, tag| {
-                let first = args[0].clone();
-                let js_function = first.try_into_function().expect("Cannot convert first parameter to function");
-                js_function.call(vec![10.to_owned(context), ToOwnedJsValue::to_owned("Hello world", context)]).unwrap();
-                OwnedJsValue::new(context, create_undefined())
-            });
-            module.register_function("callDartFunction", 0, |context, args: Vec<OwnedJsValue>, tag| {
-                let first = args[0].clone();
-                let js_function = first.try_into_function().expect("Cannot convert first parameter to function");
-                js_function.call(vec![10.to_owned(context), ToOwnedJsValue::to_owned("Hello world", context)]).unwrap();
-                OwnedJsValue::new(context, create_undefined())
-            });
-            module
-        }).expect("Cannot register dart interop module");
     }
-
 }
 
+pub fn print_execution_error(error: ExecutionError) {
+    println!("{:?}", error);
+    match error {
+        quickjs_rusty::ExecutionError::InputWithZeroBytes => {},
+        quickjs_rusty::ExecutionError::Conversion(value_error) => {
+
+        },
+        quickjs_rusty::ExecutionError::Internal(_) => {},
+        quickjs_rusty::ExecutionError::Exception(owned_js_value) => {
+            let error = owned_js_value.js_to_string().unwrap();
+            println!("{}", error);
+        },
+        quickjs_rusty::ExecutionError::OutOfMemory => {
+            println!("Out of memory")                    
+        },
+        _ => {},
+    }
+}
