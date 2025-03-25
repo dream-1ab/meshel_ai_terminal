@@ -10,7 +10,7 @@
 use std::{ffi::{CStr, CString}, os::raw::*};
 
 use flatbuffers::FlatBufferBuilder;
-use quickjs_rusty::{q::{JS_GetArrayBuffer, JS_IsArrayBuffer, JS_Throw, JS_ThrowTypeError}, utils::{create_int, create_undefined}, OwnedJsValue};
+use quickjs_rusty::{q::{JS_GetArrayBuffer, JS_IsArrayBuffer, JS_Throw, JS_ThrowTypeError, JSValue}, utils::{create_int, create_undefined}, OwnedJsValue, RawJSValue,};
 
 use crate::{c_api::javascript_function_wrapper::JavaScriptFunction, javascript_engine::RustJsModule, print_execution_error, DartFuncionCallCallback, DartJavascriptRegisterFunctionCallback, JavaScriptEngineDartWrapper};
 
@@ -78,7 +78,7 @@ pub extern "C" fn javascript_engine_set_dart_callback_functions(engine_ptr: *mut
             // });
             let register_javascript_function_handler = wrapper.dart_javascript_function_register_callback.clone();
             let engine_id = wrapper.engine_id;
-            module.register_function("exportJavaScriptFunction", 0, move |context, args: Vec<OwnedJsValue>, tag| {
+            module.export_function("exportJavaScriptFunction", 0, move |context, args: Vec<OwnedJsValue>, tag| {
                 let register_function_handler = register_javascript_function_handler;
                 let engine_id = engine_id;
                 if register_function_handler.is_none() {
@@ -131,7 +131,7 @@ pub extern "C" fn javascript_engine_register_dart_function(engine_ptr: *mut c_vo
         let mut native_module = RustJsModule::new(module.name().expect("Cannot get module name").into());
         module.functions().expect("Cannot get functions list from parameter during module registeration.").iter().for_each(|function| {
             let function_id = function.function_id();
-            native_module.register_function(function.name().expect("Cannot get function name").into(), 0, move |context, args: Vec<OwnedJsValue>, tag| {
+            native_module.export_function(function.name().expect("Cannot get function name").into(), 0, move |context, args: Vec<OwnedJsValue>, tag| {
                 let dart_callback_function = dart_callback_function;
                 {//validate number of parameters
                     if dart_callback_function.is_none() {
@@ -180,9 +180,12 @@ pub extern "C" fn javascript_engine_register_dart_function(engine_ptr: *mut c_vo
                 
                 let (data_ptr, size) = unsafe {//get data pointer
                     let mut size = 0usize;
-                    let js_value = params.1.extract();
+                    let js_value: JSValue = params.1.clone().extract();
                     let data_pointer = JS_GetArrayBuffer(context, &mut size, js_value);
                     OwnedJsValue::new(context, js_value); //this is safe because js_value is valied until this whole function returns and that object memory is managed by js engine.
+                    if data_pointer == std::ptr::null_mut() {
+                        println!("Cannot get underlying memory of ArrayBuffer.");
+                    }
                     (data_pointer, size)
                 };
                 let function_id = function_id.clone();

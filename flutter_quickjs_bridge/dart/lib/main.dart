@@ -60,6 +60,6 @@ Future<void> main() async {
     print("Evaluation time: ${watch.elapsedMicroseconds} micros\n\n\n\n");
     print("Result: $result");
   }
-
+  engine._myJsFunction!.dispose();
   engine.dispose();
 }

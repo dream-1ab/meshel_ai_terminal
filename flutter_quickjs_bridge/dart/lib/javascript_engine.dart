@@ -188,7 +188,9 @@ abstract class JavaScriptEngine {
       JavaScriptEngine._javascriptCallCallbacks.remove(callbackId);
     }
     _javascriptEngines.remove(this.engineId);
-    this._registeredJavaScriptFunctions.forEach((function) => function.dispose());
+    this._registeredJavaScriptFunctions.forEach((function) {
+      if (!function._disposed) function.dispose();
+    });
     this._registeredJavaScriptFunctions.clear();
     _disposed = true;
     _javascript_engine_free!(_pointer);

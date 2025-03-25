@@ -18,3 +18,8 @@ declare module "core/console" {
 declare module "core/threading" {
     export function sleep(millisecond: number)
 }
+
+declare module "core/rust" {
+    export function utf8_decode(bytes: Uint8Array): string
+    export function utf8_encode(text: string): Uint8Array
+}

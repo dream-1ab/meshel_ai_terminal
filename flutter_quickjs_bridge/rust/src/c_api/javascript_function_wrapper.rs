@@ -1,6 +1,6 @@
 use std::os::raw::c_void;
 
-use quickjs_rusty::{q::{JSRuntime, JS_NewArrayBuffer}, utils::create_int, JsFunction, OwnedJsValue};
+use quickjs_rusty::{q::{JSRuntime, JS_GetException, JS_NewArrayBuffer}, utils::create_int, JsFunction, OwnedJsValue};
 
 use crate::print_execution_error;
 
@@ -68,8 +68,16 @@ pub extern "C" fn javascript_function_call(javascript_function_ptr: *const JavaS
         Ok(result) => {
             if result.is_int() {
                 result.to_int().unwrap()
+            } else if result.is_exception() {
+                let context = result.context();
+                let exception = unsafe {
+                    OwnedJsValue::new(context, JS_GetException(context)).try_into_object().expect("Cannot convert exception to object.")
+                };
+                let stack = exception.property("stack").unwrap().unwrap().js_to_string().unwrap();
+                println!("JavaScript error: {}, stackTrace: \n{}", exception.js_to_string().unwrap(), stack);
+                -1
             } else {
-                0
+                -2
             }
         },
         Err(error) => {

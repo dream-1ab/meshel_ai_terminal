@@ -88,7 +88,7 @@ impl RustJsModule {
         RustJsModule { name: module_name, exported_functions: vec![] }
     }
 
-    pub fn register_function<RF>(&mut self, name: &str, tag: i32, f: RF) where RF: RustJsFunction + 'static {
+    pub fn export_function<RF>(&mut self, name: &str, tag: i32, f: RF) where RF: RustJsFunction + 'static {
         let rust_function = Box::new(f);
         fn make_rust_closure<F>(f: F) -> (JSCFunctionData, Box<F>) where F: Fn(*mut JSContext, OwnedJsValue, Vec<OwnedJsValue>, i32) -> OwnedJsValue {
             unsafe extern "C" fn js_rust_callback<F>(context: *mut JSContext, this_val: JSValue, argc: ::std::os::raw::c_int, argv: *mut JSValue, magic: ::std::os::raw::c_int, func_data: *mut JSValue,) -> JSValue where F: Fn(*mut JSContext, OwnedJsValue, Vec<OwnedJsValue>, i32) -> OwnedJsValue {
